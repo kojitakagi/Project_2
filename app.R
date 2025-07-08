@@ -5,7 +5,6 @@ library(dplyr)
 library(tidyr)
 library(jsonlite)
 library(DT)
-library(rlang)
 
 # ---- Famous MLB players ----
 famous_players <- tibble::tibble(
@@ -18,9 +17,10 @@ get_home_away_stats <- function(player_id, season = 2024) {
   url <- paste0("https://statsapi.mlb.com/api/v1/people/", player_id,
                 "/stats?stats=homeAndAway&group=hitting&season=", season)
   json <- fromJSON(url, flatten = TRUE)
-  splits <- json$stats$splits[[1]]
-  if (length(splits) == 0) return(NULL)
   
+  if (length(json$stats$splits[[1]]) == 0) return(NULL)
+  
+  splits <- json$stats$splits[[1]]
   df <- tibble::as_tibble(splits) %>%
     mutate(
       Location = ifelse(isHome, "Home", "Away"),
@@ -38,7 +38,6 @@ get_monthly_stats <- function(player_id = 660271, season = 2024) {
                 "/stats?stats=byMonth&group=hitting&season=", season)
   json <- fromJSON(url, flatten = TRUE)
   splits <- json$stats$splits[[1]]
-  if (length(splits) == 0) return(NULL)
   
   df <- tibble::as_tibble(splits) %>%
     transmute(
@@ -60,15 +59,15 @@ ui <- fluidPage(
       selectInput("selected_id", "Select a player:",
                   choices = setNames(famous_players$id, famous_players$name),
                   selected = 660271),
+      selectInput("metric", "Select metric to compare:",
+                  choices = c("BattingAverage", "HomeRuns", "StolenBases"),
+                  selected = "HomeRuns"),
       checkboxGroupInput("metrics", "Select Metrics to Display:",
                          choices = c("HR", "SB", "AVG"),
                          selected = c("HR", "SB", "AVG")),
       radioButtons("plot_type", "Plot Type:",
                    choices = c("Facet per Metric" = "facet", "Combined (HR/SB bar + AVG line)" = "combined"),
-                   selected = "facet"),
-      selectInput("metric", "Metric for Home vs Away:",
-                  choices = c("BattingAverage", "HomeRuns", "StolenBases"),
-                  selected = "HomeRuns")
+                   selected = "facet")
     ),
     mainPanel(
       tabsetPanel(
@@ -90,7 +89,6 @@ server <- function(input, output, session) {
   # Monthly Data
   data <- reactive({
     df <- get_monthly_stats(player_id = input$selected_id)
-    if (is.null(df)) return(NULL)
     df %>% filter(Metric %in% input$metrics)
   })
   
@@ -100,13 +98,12 @@ server <- function(input, output, session) {
     req(df)
     
     player_name <- famous_players$name[famous_players$id == input$selected_id]
-    
     y_limits <- switch(input$metric,
                        "BattingAverage" = c(0, 0.4),
                        "HomeRuns" = c(0, 40),
                        "StolenBases" = c(0, 40))
     
-    ggplot(df, aes(x = Location, y = !!sym(input$metric), fill = Location)) +
+    ggplot(df, aes(x = Location, y = .data[[input$metric]], fill = Location)) +
       geom_col(width = 0.6) +
       coord_cartesian(ylim = y_limits) +
       labs(
@@ -121,8 +118,6 @@ server <- function(input, output, session) {
   # ---- Monthly Plot ----
   output$monthlyPlot <- renderPlot({
     df <- data()
-    req(df)
-    
     player_name <- famous_players$name[famous_players$id == input$selected_id]
     
     if (input$plot_type == "facet") {
@@ -151,10 +146,9 @@ server <- function(input, output, session) {
   
   # ---- Raw Data ----
   output$rawData <- DT::renderDataTable({
-    df <- data()
-    req(df)
-    df %>% pivot_wider(names_from = Metric, values_from = Value) %>%
-      DT::datatable(options = list(pageLength = 12))
+    df <- data() %>%
+      pivot_wider(names_from = Metric, values_from = Value)
+    DT::datatable(df, options = list(pageLength = 12))
   })
 }
 
