@@ -15,3 +15,4 @@ This Shiny app allows users to explore the 2024 batting stats of famous MLB play
 
 ```r
 install.packages(c("shiny", "ggplot2", "dplyr", "tidyr", "jsonlite", "DT"))
+shiny::runGitHub("Project_2", "kojitakagi")
