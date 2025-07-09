@@ -157,6 +157,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # ---- Cumulative Plot ----
   output$cumulativePlot <- renderPlot({
     df <- get_monthly_stats(player_id = input$selected_id) %>%
       filter(Metric %in% c("HR", "SB")) %>%
@@ -177,8 +178,6 @@ server <- function(input, output, session) {
       theme_minimal(base_size = 14) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   })
-  
-  
   
   
   # ---- Raw Data ----
