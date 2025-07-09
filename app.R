@@ -76,6 +76,18 @@ ui <- fluidPage(
         tabPanel("Monthly Stats", plotOutput("monthlyPlot", height = "600px")),
         tabPanel("Raw Data", DT::dataTableOutput("rawData")),
         tabPanel("Cumulative", plotOutput("cumulativePlot", height = "500px")),
+        tabPanel("Contingency Table",
+                 sidebarLayout(
+                   sidebarPanel(
+                     selectInput("hrLevel", "HR Level", choices = c("Low", "Mid", "High")),
+                     selectInput("sbLevel", "SB Level", choices = c("Low", "Mid", "High"))
+                   ),
+                   mainPanel(
+                     tableOutput("contingencyTable")
+                   )
+                 )
+        ),
+        
         tabPanel("Data Exploration",
                  fluidRow(
                    column(4,
@@ -197,6 +209,28 @@ server <- function(input, output, session) {
       theme_minimal(base_size = 14) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   })
+  
+  output$contingencyTable <- renderTable({
+    monthly_data <- get_monthly_stats(player_id = input$selected_id) %>%
+      pivot_wider(names_from = Metric, values_from = Value)
+    
+    monthly_data$HR_cat <- cut(monthly_data$HR,
+                               breaks = c(-1, 5, 10, Inf),
+                               labels = c("Low", "Mid", "High"))
+    monthly_data$SB_cat <- cut(monthly_data$SB,
+                               breaks = c(-1, 5, 10, Inf),
+                               labels = c("Low", "Mid", "High"))
+    
+    tab <- table(monthly_data$HR_cat, monthly_data$SB_cat)
+    filtered_count <- tab[input$hrLevel, input$sbLevel]
+    
+    data.frame(
+      `HR Level` = input$hrLevel,
+      `SB Level` = input$sbLevel,
+      Count = filtered_count
+    )
+  })
+  
   
   explore_data <- reactive({
     df <- get_monthly_stats(player_id = input$selected_id) %>%
