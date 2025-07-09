@@ -5,6 +5,8 @@ library(dplyr)
 library(tidyr)
 library(jsonlite)
 library(DT)
+library(GGally)
+
 
 # ---- Famous MLB players ----
 famous_players <- tibble::tibble(
@@ -73,7 +75,18 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Home vs Away", plotOutput("barPlot")),
         tabPanel("Monthly Stats", plotOutput("monthlyPlot", height = "600px")),
-        tabPanel("Raw Data", DT::dataTableOutput("rawData"))
+        tabPanel("Raw Data", DT::dataTableOutput("rawData")),
+        tabPanel("Cumulative", plotOutput("cumulativePlot", height = "500px")), 
+        tabPanel("About",
+                 h3("MLB Star Player Stats App"),
+                 p("This app provides interactive visualizations of 2024 MLB batting statistics for top players including Shohei Ohtani, Ronald Acuña Jr., Aaron Judge, and others."),
+                 p("Users can explore home vs away performance, monthly trends, raw data, and contingency tables."),
+                 p("A highlight is the cumulative plot of home runs and stolen bases. This feature allows users to discover gameplay shifts across the season for each player — such as sudden surges in performance or plateaus."),
+                 p("GitHub Repository: ",
+                   a("Project_2 on GitHub", href = "https://github.com/kojitakagi/Project_2", target = "_blank"))
+        )
+        
+        
       )
     )
   )
@@ -143,6 +156,30 @@ server <- function(input, output, session) {
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
     }
   })
+  
+  output$cumulativePlot <- renderPlot({
+    df <- get_monthly_stats(player_id = input$selected_id) %>%
+      filter(Metric %in% c("HR", "SB")) %>%
+      arrange(month) %>%
+      group_by(Metric) %>%
+      mutate(Cumulative = cumsum(Value))
+    
+    player_name <- famous_players$name[famous_players$id == input$selected_id]
+    
+    ggplot(df, aes(x = month, y = Cumulative, color = Metric, group = Metric)) +
+      geom_line(size = 1.2) +
+      geom_point(size = 3) +
+      labs(
+        title = paste("Cumulative HR & SB for", player_name),
+        x = "Month",
+        y = "Cumulative Count"
+      ) +
+      theme_minimal(base_size = 14) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  })
+  
+  
+  
   
   # ---- Raw Data ----
   output$rawData <- DT::renderDataTable({
