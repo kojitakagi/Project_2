@@ -5,6 +5,7 @@ This Shiny app allows users to explore the 2024 batting stats of famous MLB play
 - **Player Selection:** Choose from five popular MLB players.
 - **Home vs Away Stats:** View batting average (AVG), home runs (HR), and stolen bases (SB).
 - **Monthly Stats:** Select multiple metrics (HR, SB, AVG) and visualize them either in separate facets or combined view.
+- **Cumulative Plot:** Track season-long trends of HR and SB by player.
 - **Raw Data Tab:** View the raw data used for the visualizations.
 
 ## How to Run
