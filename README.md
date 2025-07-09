@@ -10,6 +10,7 @@ This Shiny app allows users to explore the 2024 batting stats of famous MLB play
 - Data Exploration Tab: Allows users to interactively explore the data by selecting variables, plot types (bar, boxplot, scatter), and applying facetting. Users can also download the explored data as CSV.
 - The app includes multiple dynamic UI elements, allowing real-time interactivity and customization of plots and summaries.
 - Real-time data is fetched directly from the official [MLB Stats API](https://statsapi.mlb.com/api/).
+-  _Note: Accessing the base URL will show an error. The app uses structured endpoints such as `/api/v1/people/{id}/stats` to retrieve player data._
 
 ## How to Run
 1. Install required packages (if not already installed):
